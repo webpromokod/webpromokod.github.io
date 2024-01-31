@@ -1,53 +1,37 @@
+const express = require('express');
 const fs = require('fs');
-const readline = require('readline');
+const path = require('path');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
+const app = express();
+const PORT = 3000;
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Function to take user input
-function getUserInput(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer);
+app.post('/save', (req, res) => {
+    const data = {
+        input1: req.body.input1,
+        input2: req.body.input2,
+    };
+
+    const jsonData = JSON.stringify(data, null, 2);
+
+    fs.writeFile('data.json', jsonData, (err) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Internal Server Error');
+        } else {
+            console.log('Data saved successfully.');
+            res.send('Data saved successfully.');
+        }
     });
-  });
-}
+});
 
-// Function to save inputs to a JSON file
-function saveToJsonFile(data) {
-  const jsonData = JSON.stringify(data, null, 2);
-  fs.writeFileSync('inputs.json', jsonData);
-  console.log('Inputs saved to inputs.json');
-}
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
 
-// Function to read inputs from the JSON file
-function readFromJsonFile() {
-  try {
-    const data = fs.readFileSync('inputs.json', 'utf-8');
-    const parsedData = JSON.parse(data);
-    console.log('Inputs from inputs.json:', parsedData);
-  } catch (error) {
-    console.error('Error reading inputs from inputs.json:', error.message);
-  }
-}
-
-// Main function
-async function main() {
-  const input1 = await getUserInput('Enter the first input: ');
-  const input2 = await getUserInput('Enter the second input: ');
-
-  const inputData = {
-    input1,
-    input2
-  };
-
-  saveToJsonFile(inputData);
-  readFromJsonFile();
-
-  rl.close();
-}
-
-// Run the main function
-main();
